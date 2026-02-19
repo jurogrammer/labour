@@ -20,6 +20,15 @@ DEFAULT_KEYWORDS = (
     "단기 알바",
     "단기알바",
     "캐주얼",
+    "타일",
+    "데모도",
+)
+
+DEFAULT_BLACKLIST_KEYWORDS = (
+    "키친",
+    "키친핸드",
+    "kitchen",
+    "kitchen hand",
 )
 
 
@@ -42,6 +51,17 @@ def build_keyword_set(extra_csv: str | None = None) -> list[str]:
     return sorted(normalized)
 
 
+def build_blacklist_set(extra_csv: str | None = None) -> list[str]:
+    combined = list(DEFAULT_BLACKLIST_KEYWORDS) + parse_keywords_csv(extra_csv)
+    normalized = {normalize_text(word) for word in combined if normalize_text(word)}
+    return sorted(normalized)
+
+
 def matches_keywords(title: str, snippet: str, keywords: list[str]) -> bool:
     haystack = normalize_text(f"{title} {snippet}")
     return any(keyword in haystack for keyword in keywords)
+
+
+def matches_blacklist(title: str, snippet: str, blacklist: list[str]) -> bool:
+    haystack = normalize_text(f"{title} {snippet}")
+    return any(term in haystack for term in blacklist)

@@ -6,7 +6,12 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from job_alert.config import Settings, ensure_hojubada_storage_state
-from job_alert.keywords import build_keyword_set, matches_keywords
+from job_alert.keywords import (
+    build_blacklist_set,
+    build_keyword_set,
+    matches_blacklist,
+    matches_keywords,
+)
 from job_alert.models import JobPost, PipelineResult, SiteResult
 from job_alert.notifier_slack import send_slack_message
 from job_alert.scrapers.hojubada import fetch_hojubada_posts
@@ -179,8 +184,15 @@ def run_pipeline(
 
     all_posts = [post for result in site_results for post in result.posts]
     keyword_set = build_keyword_set(settings.keywords_csv)
+    blacklist_set = build_blacklist_set(settings.keyword_blacklist_csv)
+
     keyword_matched_posts = [
         post for post in all_posts if matches_keywords(post.title, post.content_snippet, keyword_set)
+    ]
+    keyword_matched_posts = [
+        post
+        for post in keyword_matched_posts
+        if not matches_blacklist(post.title, post.content_snippet, blacklist_set)
     ]
 
     error_messages = [f"{result.source}: {result.error}" for result in site_results if result.error]

@@ -48,6 +48,7 @@
 - Module-specific configs:
   - `HOJUBADA_STORAGE_STATE_B64` (optional local optimization; GitHub workflow does not require it)
   - `KEYWORDS_CSV` (optional keyword override)
+  - `KEYWORD_BLACKLIST_CSV` (optional keyword exclusion override; kitchen-related exclusions enabled by default)
   - `TZ` (default `Australia/Melbourne`)
   - `SITE_RETRY_ATTEMPTS` (default `2`)
   - `SITE_RETRY_DELAY_SECONDS` (default `1`)
@@ -66,6 +67,7 @@
 - Error boundaries: Pipeline proceeds with partial failures and reports them to Slack.
 - Validation rules: Required env vars validated before `run`; webhook URL must use HTTPS.
 - Failure handling rules: Scrapers retry automatically; Slack error alert is emitted only after consecutive failures reach threshold.
+- Filtering rules: Posts must match include keywords and must not match blacklist keywords.
 
 # Assumptions / Decisions
 - Weekly no-new heartbeat limits Slack noise.
@@ -79,6 +81,8 @@
 - Raw Playwright errors can include verbose multi-line call logs in Slack alerts.
 
 # Change Log (Last 10)
+- 2026-02-20: Added blacklist keyword filtering (default `키친/키친핸드/kitchen/kitchen hand`) and `KEYWORD_BLACKLIST_CSV` config.
+- 2026-02-20: Performed live delivery verification after state reset; pipeline sent Slack alert with 9 new posts and zero site failures.
 - 2026-02-20: Added explicit default keyword phrase `단기 알바` and regression test coverage for Korean short-term variants.
 - 2026-02-20: Implemented retry + consecutive failure threshold policy (single transient failures suppressed, escalated on repeated failures).
 - 2026-02-20: Reverted Hojubada error sanitization; Slack now receives raw Playwright error text again.
@@ -87,5 +91,4 @@
 - 2026-02-19: Executed local integration test via `.env`; dedupe worked and hojubada path failed with connection-refused in this runtime.
 - 2026-02-19: Removed workflow dependency on `HOJUBADA_STORAGE_STATE_B64`; CI runs with automatic Kakao login via credentials.
 - 2026-02-19: Switched Hojubada auth to automatic Kakao login fallback; storage-state secret became optional.
-- 2026-02-19: Implemented full pipeline (scrapers, keyword filter, Slack notifier, SQLite state store, CLI, tests, workflow).
 - 2026-02-19: Created initial module architecture, runtime contracts, and operational rules.

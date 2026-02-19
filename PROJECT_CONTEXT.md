@@ -40,6 +40,7 @@
 - Caching: SQLite dedupe state acts as durable cache of sent items.
 - Rate limiting: Conservative run schedule and per-site request throttling/timeouts.
 - Observability: Run summaries, site error details, and weekly no-new heartbeat message.
+- Content filtering: Include keyword set with blacklist exclusions (kitchen-related posts excluded by default).
 
 # Assumptions / Decisions
 - Melbourne timezone (`Australia/Melbourne`) is the business clock.
@@ -54,6 +55,8 @@
 - Raw scraper errors may include multi-line Playwright call logs when a site fails.
 
 # Change Log (Last 10)
+- 2026-02-20: Added keyword blacklist filtering (default kitchen exclusions + `KEYWORD_BLACKLIST_CSV` override support).
+- 2026-02-20: Cleared runtime state tables (`sent_posts`, `run_logs`, `meta`) and verified live Slack delivery with a fresh run (`new_count=9`, `failed_sites=0`).
 - 2026-02-20: Expanded Korean short-term keyword coverage by adding explicit `단기 알바` phrase while keeping existing `단기`.
 - 2026-02-20: Added site retry + consecutive-failure threshold handling so one-off scraper failures are suppressed from Slack error alerts.
 - 2026-02-20: Reverted Hojubada error text sanitization so Slack receives original Playwright error strings.
@@ -62,5 +65,4 @@
 - 2026-02-19: Ran local integration test with `.env`; woorimel/melbsky succeeded and hojubada returned connection refused in current environment.
 - 2026-02-19: Removed `HOJUBADA_STORAGE_STATE_B64` usage from GitHub Actions workflow; CI now runs with credential-based automatic login.
 - 2026-02-19: Updated architecture to support automatic Hojubada Kakao login with optional storage-state secret.
-- 2026-02-19: Implemented `job-alert` module with scrapers, pipeline, SQLite dedupe, tests, and GitHub Actions schedule.
 - 2026-02-19: Initialized monorepo architecture context and added `job-alert` module registry.

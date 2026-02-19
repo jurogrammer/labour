@@ -164,3 +164,41 @@ def test_pipeline_retries_scraper_before_marking_failure(tmp_path) -> None:
     assert result.failed_site_count == 0
     assert result.new_count == 1
     assert result.message_sent
+
+
+def test_pipeline_excludes_blacklisted_posts(tmp_path) -> None:
+    settings = _base_settings(tmp_path)
+    sent_messages: list[str] = []
+
+    def fake_sender(_: str, message: str, __: float) -> None:
+        sent_messages.append(message)
+
+    def scraper(_: Settings) -> SiteResult:
+        return SiteResult(
+            source="woorimel",
+            posts=[
+                _post("301"),
+                JobPost(
+                    source="woorimel",
+                    source_post_id="302",
+                    title="키친핸드 단기 구인",
+                    url="https://example.com/302",
+                    posted_at_raw=None,
+                    content_snippet="kitchen hand",
+                    fetched_at_utc=datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+                ),
+            ],
+            error=None,
+        )
+
+    result = run_pipeline(
+        settings,
+        scrapers=(scraper,),
+        send_message=fake_sender,
+        now_utc=datetime(2026, 2, 19, 2, 0, tzinfo=timezone.utc),
+    )
+
+    assert result.keyword_matched == 1
+    assert result.new_count == 1
+    assert result.message_sent
+    assert "키친핸드" not in sent_messages[0]

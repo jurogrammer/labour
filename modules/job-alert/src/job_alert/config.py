@@ -32,6 +32,7 @@ class Settings(BaseModel):
     hojubada_pw: str = ""
     hojubada_storage_state_b64: str = ""
     keywords_csv: str | None = None
+    keyword_blacklist_csv: str | None = None
     tz: str = "Australia/Melbourne"
     request_timeout_seconds: float = 20.0
     user_agent: str = "job-alert-bot/0.1"
@@ -70,6 +71,7 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         "hojubada_pw": _env_value(source, "HOJUBADA_PW"),
         "hojubada_storage_state_b64": _env_value(source, "HOJUBADA_STORAGE_STATE_B64"),
         "keywords_csv": _env_value(source, "KEYWORDS_CSV") or None,
+        "keyword_blacklist_csv": _env_value(source, "KEYWORD_BLACKLIST_CSV") or None,
         "tz": _env_value(source, "TZ") or "Australia/Melbourne",
         "request_timeout_seconds": float(_env_value(source, "REQUEST_TIMEOUT_SECONDS") or "20"),
         "user_agent": _env_value(source, "USER_AGENT") or "job-alert-bot/0.1",

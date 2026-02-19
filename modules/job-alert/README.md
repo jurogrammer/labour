@@ -22,6 +22,7 @@ Optional:
 
 - `HOJUBADA_STORAGE_STATE_B64` (restores cached session; if missing, automatic Kakao login is attempted)
 - `KEYWORDS_CSV`
+- `KEYWORD_BLACKLIST_CSV` (comma-separated exclusion keywords; defaults already exclude kitchen/kitchen hand)
 - `TZ` (default: `Australia/Melbourne`)
 - `SITE_RETRY_ATTEMPTS` (default: `2`)
 - `SITE_RETRY_DELAY_SECONDS` (default: `1`)

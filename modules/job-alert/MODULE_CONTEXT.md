@@ -66,12 +66,12 @@
 - Module-specific patterns: Each scraper returns `SiteResult`; errors are captured per site.
 - Error boundaries: Pipeline proceeds with partial failures and reports them to Slack.
 - Validation rules: Required env vars validated before `run`; webhook URL must use HTTPS.
-- Failure handling rules: Scrapers retry automatically; Slack error alert is emitted only after consecutive failures reach threshold.
+- Failure handling rules: Scrapers retry automatically; Slack alert delivery is only triggered when at least one new posting is found.
 - Filtering rules: Posts must match include keywords and must not match blacklist keywords.
 
 # Assumptions / Decisions
-- Weekly no-new heartbeat limits Slack noise.
 - Hojubada scraper attempts automatic Kakao login with credentials and refreshes storage state.
+- No alert is sent on runs with zero newly matched jobs, including repeated site-failure cases.
 
 # Known Issues
 - Site markup differences can reduce extraction quality without parser updates.
@@ -81,6 +81,7 @@
 - Raw Playwright errors can include verbose multi-line call logs in Slack alerts.
 
 # Change Log (Last 10)
+- 2026-02-20: Stopped Slack delivery when no new postings are found, even if site-failure thresholds are reached.
 - 2026-02-20: Added blacklist keyword filtering (default `키친/키친핸드/kitchen/kitchen hand`) and `KEYWORD_BLACKLIST_CSV` config.
 - 2026-02-20: Performed live delivery verification after state reset; pipeline sent Slack alert with 9 new posts and zero site failures.
 - 2026-02-20: Added explicit default keyword phrase `단기 알바` and regression test coverage for Korean short-term variants.

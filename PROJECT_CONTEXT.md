@@ -20,7 +20,7 @@
 - Logging / tracing strategy: Structured stdout logs with run summary and per-site errors.
 - Security policy: Credentials and webhook must stay in CI secrets; no plaintext secrets in repo.
 - Naming conventions: snake_case for Python modules/functions, kebab-case for module folder names.
-- Failure alert policy: Retry per site and notify Slack only after consecutive failure threshold.
+- Failure alert policy: Retry per site; on a run with new postings, include site failures that reached the consecutive-failure threshold in Slack; otherwise no Slack send.
 
 # Infrastructure
 - Deployment topology: GitHub Actions scheduled workflow on private repository.
@@ -39,7 +39,8 @@
 - Authorization: GitHub repository permissions and Slack webhook access control.
 - Caching: SQLite dedupe state acts as durable cache of sent items.
 - Rate limiting: Conservative run schedule and per-site request throttling/timeouts.
-- Observability: Run summaries, site error details, and weekly no-new heartbeat message.
+- Observability: Run summaries and site error details; no notifications for empty successful runs.
+- Observability: Slack is not sent when a run finds zero new postings.
 - Content filtering: Include keyword set with blacklist exclusions (kitchen-related posts excluded by default).
 
 # Assumptions / Decisions
@@ -55,6 +56,8 @@
 - Raw scraper errors may include multi-line Playwright call logs when a site fails.
 
 # Change Log (Last 10)
+- 2026-02-20: Suppressed Slack sends when no job postings are discovered, including previously threshold-based failure-only sends.
+- 2026-02-20: Disabled no-new heartbeat notifications; Slack alerts now fire only for new posts or escalated site failures.
 - 2026-02-20: Added keyword blacklist filtering (default kitchen exclusions + `KEYWORD_BLACKLIST_CSV` override support).
 - 2026-02-20: Cleared runtime state tables (`sent_posts`, `run_logs`, `meta`) and verified live Slack delivery with a fresh run (`new_count=9`, `failed_sites=0`).
 - 2026-02-20: Expanded Korean short-term keyword coverage by adding explicit `단기 알바` phrase while keeping existing `단기`.
@@ -64,5 +67,3 @@
 - 2026-02-20: Fixed Hojubada connectivity by switching scraper/auth URLs from HTTPS to HTTP; 3-site scrape succeeded in integration run.
 - 2026-02-19: Ran local integration test with `.env`; woorimel/melbsky succeeded and hojubada returned connection refused in current environment.
 - 2026-02-19: Removed `HOJUBADA_STORAGE_STATE_B64` usage from GitHub Actions workflow; CI now runs with credential-based automatic login.
-- 2026-02-19: Updated architecture to support automatic Hojubada Kakao login with optional storage-state secret.
-- 2026-02-19: Initialized monorepo architecture context and added `job-alert` module registry.

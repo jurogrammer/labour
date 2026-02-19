@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 from job_alert.config import Settings, ensure_hojubada_storage_state
@@ -27,8 +27,6 @@ DEFAULT_SCRAPERS: tuple[Scraper, ...] = (
     fetch_melbsky_posts,
     fetch_hojubada_posts,
 )
-NO_NEW_HEARTBEAT_META_KEY = "last_no_new_heartbeat_utc"
-NO_NEW_HEARTBEAT_INTERVAL_DAYS = 7
 SITE_FAILURE_STREAK_META_PREFIX = "site_failure_streak:"
 
 
@@ -71,8 +69,6 @@ def _build_summary_message(
     site_results: list[SiteResult],
     notified_error_messages: list[str],
     transient_failures: list[str],
-    *,
-    heartbeat_only: bool,
 ) -> str:
     try:
         local_now = run_at_utc.astimezone(ZoneInfo(settings.tz))
@@ -97,9 +93,6 @@ def _build_summary_message(
             lines.append(f"- [{post.source}] {post.title} - {post.url}")
         if len(new_posts) > 30:
             lines.append(f"- ... and {len(new_posts) - 30} more")
-    elif heartbeat_only:
-        lines.append("")
-        lines.append("주간 상태 확인: 신규 공고 없음")
 
     if notified_error_messages:
         lines.append("")
@@ -113,22 +106,6 @@ def _build_summary_message(
             lines.append(f"- {warning}")
 
     return "\n".join(lines)
-
-
-def _should_send_no_new_heartbeat(store: StateStore, now_utc: datetime) -> bool:
-    previous = store.get_meta(NO_NEW_HEARTBEAT_META_KEY)
-    if not previous:
-        return True
-
-    try:
-        previous_dt = datetime.fromisoformat(previous)
-    except ValueError:
-        return True
-
-    if previous_dt.tzinfo is None:
-        previous_dt = previous_dt.replace(tzinfo=timezone.utc)
-
-    return now_utc - previous_dt >= timedelta(days=NO_NEW_HEARTBEAT_INTERVAL_DAYS)
 
 
 def _site_failure_streak_key(source: str) -> str:
@@ -218,10 +195,8 @@ def run_pipeline(
                     f"{result.source}: 연속 실패 {streak}회 (임계치 {settings.error_alert_threshold}회 미만)"
                 )
 
-        send_heartbeat = not unsent_posts and not error_messages and _should_send_no_new_heartbeat(
-            store, run_at_utc
-        )
-        should_send = bool(unsent_posts or notified_error_messages or send_heartbeat)
+        # Do not send Slack notification when no new postings were found.
+        should_send = bool(unsent_posts)
         summary_text: str | None = None
 
         if should_send:
@@ -233,7 +208,6 @@ def run_pipeline(
                 site_results,
                 notified_error_messages,
                 transient_failures,
-                heartbeat_only=send_heartbeat,
             )
             send_message(
                 settings.slack_webhook_url,
@@ -242,8 +216,6 @@ def run_pipeline(
             )
             if unsent_posts:
                 store.mark_posts_sent(unsent_posts, sent_at_utc=run_at_iso)
-            if send_heartbeat:
-                store.set_meta(NO_NEW_HEARTBEAT_META_KEY, run_at_iso)
 
         store.log_run(run_at_iso, new_count=len(unsent_posts), error_count=len(error_messages))
 

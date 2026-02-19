@@ -54,6 +54,8 @@ def test_pipeline_deduplicates_same_post_across_runs(tmp_path) -> None:
 
     assert first.new_count == 1
     assert second.new_count == 0
+    assert not second.message_sent
+    assert len(sent_messages) == 1
 
     with StateStore(settings.sent_db_path) as store:
         assert store.count_sent_posts() == 1
@@ -108,7 +110,7 @@ def test_pipeline_suppresses_single_failure_when_no_new_posts(tmp_path) -> None:
     assert sent_messages == []
 
 
-def test_pipeline_alerts_after_consecutive_failures(tmp_path) -> None:
+def test_pipeline_never_alerts_without_new_posts_even_after_failures(tmp_path) -> None:
     settings = _base_settings(tmp_path)
     sent_messages: list[str] = []
 
@@ -132,10 +134,8 @@ def test_pipeline_alerts_after_consecutive_failures(tmp_path) -> None:
     )
 
     assert not first.message_sent
-    assert second.message_sent
-    assert len(sent_messages) == 1
-    assert "오류" in sent_messages[0]
-    assert "연속 실패 2회" in sent_messages[0]
+    assert not second.message_sent
+    assert len(sent_messages) == 0
 
 
 def test_pipeline_retries_scraper_before_marking_failure(tmp_path) -> None:

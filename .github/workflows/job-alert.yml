@@ -1,0 +1,59 @@
+name: job-alert
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: job-alert
+  cancel-in-progress: true
+
+jobs:
+  run-job-alert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e modules/job-alert
+          python -m playwright install --with-deps chromium
+
+      - name: Run pipeline
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          WOORIMEL_ID: ${{ secrets.WOORIMEL_ID }}
+          WOORIMEL_PW: ${{ secrets.WOORIMEL_PW }}
+          MELBSKY_ID: ${{ secrets.MELBSKY_ID }}
+          MELBSKY_PW: ${{ secrets.MELBSKY_PW }}
+          HOJUBADA_ID: ${{ secrets.HOJUBADA_ID }}
+          HOJUBADA_PW: ${{ secrets.HOJUBADA_PW }}
+          TZ: Australia/Melbourne
+        run: |
+          python -m job_alert.cli run
+
+      - name: Commit state changes
+        run: |
+          if [ -z "$(git status --porcelain modules/job-alert/data/sent_posts.sqlite)" ]; then
+            echo "No state changes to commit"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add modules/job-alert/data/sent_posts.sqlite
+          git commit -m "chore(state): update sent posts [skip ci]"
+          git push

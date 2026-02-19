@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+.env
+modules/job-alert/data/hojubada_storage_state.json
+modules/job-alert/output/
+playwright-report/

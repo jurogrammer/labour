@@ -60,7 +60,7 @@
   - `python -m job_alert.cli bootstrap-kakao-session --headed`
   - `python -m job_alert.cli run`
 - Ports: N/A.
-- Profiles: Local/manual and GitHub Actions scheduled profile.
+- Profiles: Local/manual and GitHub Actions scheduled profile (minute offsets `7,17,27,37,47,57` UTC).
 
 # Module Conventions
 - Module-specific patterns: Each scraper returns `SiteResult`; errors are captured per site.
@@ -72,6 +72,7 @@
 # Assumptions / Decisions
 - Hojubada scraper attempts automatic Kakao login with credentials and refreshes storage state.
 - No alert is sent on runs with zero newly matched jobs, including repeated site-failure cases.
+- Workflow cron avoids `:00` to reduce scheduler delay/drop probability in GitHub Actions.
 
 # Known Issues
 - Site markup differences can reduce extraction quality without parser updates.
@@ -81,6 +82,7 @@
 - Raw Playwright errors can include verbose multi-line call logs in Slack alerts.
 
 # Change Log (Last 10)
+- 2026-02-20: Shifted GitHub Actions cron to offset minutes (`7,17,27,37,47,57`) to improve scheduled-run reliability.
 - 2026-02-20: Stopped Slack delivery when no new postings are found, even if site-failure thresholds are reached.
 - 2026-02-20: Added blacklist keyword filtering (default `키친/키친핸드/kitchen/kitchen hand`) and `KEYWORD_BLACKLIST_CSV` config.
 - 2026-02-20: Performed live delivery verification after state reset; pipeline sent Slack alert with 9 new posts and zero site failures.
@@ -91,5 +93,3 @@
 - 2026-02-20: Updated Hojubada board/login URLs to HTTP, resolving connection-refused and restoring 3-site collection.
 - 2026-02-19: Executed local integration test via `.env`; dedupe worked and hojubada path failed with connection-refused in this runtime.
 - 2026-02-19: Removed workflow dependency on `HOJUBADA_STORAGE_STATE_B64`; CI runs with automatic Kakao login via credentials.
-- 2026-02-19: Switched Hojubada auth to automatic Kakao login fallback; storage-state secret became optional.
-- 2026-02-19: Created initial module architecture, runtime contracts, and operational rules.

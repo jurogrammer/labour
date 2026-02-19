@@ -6,7 +6,7 @@
 
 # Global Architecture
 - High-level architecture (text diagram):
-  `GitHub Actions (10m schedule) -> job-alert pipeline -> site scrapers -> keyword filter -> SQLite dedupe -> Slack webhook`
+  `GitHub Actions (10m offset schedule) -> job-alert pipeline -> site scrapers -> keyword filter -> SQLite dedupe -> Slack webhook`
 - Communication patterns: HTTP scraping + Slack webhook POST.
 - Cross-module dependencies: Root workflow depends on `modules/job-alert` executable package.
 - Shared libraries: None yet.
@@ -24,7 +24,7 @@
 
 # Infrastructure
 - Deployment topology: GitHub Actions scheduled workflow on private repository.
-- CI/CD strategy: Scheduled run plus manual dispatch; state DB auto-committed when changed.
+- CI/CD strategy: Scheduled run at minute offsets (`7,17,27,37,47,57`) plus manual dispatch; state DB auto-committed when changed.
 - CI auth mode: Workflow uses Hojubada ID/PW automatic login and no longer depends on `HOJUBADA_STORAGE_STATE_B64` secret.
 - Environments: Local dev and GitHub-hosted runner.
 - Monitoring stack: Slack alerts and workflow run status.
@@ -48,6 +48,7 @@
 - Slack webhook integration is sufficient for current notification needs.
 - Hojubada login uses credentials first and can reuse Playwright storage state when available.
 - Transient single-run site failures are suppressed to reduce Slack alert noise.
+- GitHub schedule should avoid top-of-hour congestion; cron uses offset minutes instead of `*/10`.
 
 # Known Issues
 - Scraper selectors may require updates when site DOM changes.
@@ -56,6 +57,7 @@
 - Raw scraper errors may include multi-line Playwright call logs when a site fails.
 
 # Change Log (Last 10)
+- 2026-02-20: Shifted GitHub Actions cron from `*/10` to `7,17,27,37,47,57` to avoid top-of-hour scheduler congestion and force schedule refresh.
 - 2026-02-20: Suppressed Slack sends when no job postings are discovered, including previously threshold-based failure-only sends.
 - 2026-02-20: Disabled no-new heartbeat notifications; Slack alerts now fire only for new posts or escalated site failures.
 - 2026-02-20: Added keyword blacklist filtering (default kitchen exclusions + `KEYWORD_BLACKLIST_CSV` override support).
@@ -65,5 +67,3 @@
 - 2026-02-20: Reverted Hojubada error text sanitization so Slack receives original Playwright error strings.
 - 2026-02-20: Normalized Hojubada error reporting to one-line HTTP URL format in Slack (removed noisy Playwright call logs).
 - 2026-02-20: Fixed Hojubada connectivity by switching scraper/auth URLs from HTTPS to HTTP; 3-site scrape succeeded in integration run.
-- 2026-02-19: Ran local integration test with `.env`; woorimel/melbsky succeeded and hojubada returned connection refused in current environment.
-- 2026-02-19: Removed `HOJUBADA_STORAGE_STATE_B64` usage from GitHub Actions workflow; CI now runs with credential-based automatic login.
